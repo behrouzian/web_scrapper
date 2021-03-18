@@ -1,0 +1,26 @@
+# author: Amir Behrouzian
+
+
+trigger:
+- master
+
+pool:
+  name: abehrouzian
+
+steps:
+- checkout: self
+  path: abehrouzian  # path to check out source code, relative to the agent's build directory (e.g. \_work\1); defaults to a directory called `s`
+
+
+ #run hellow world of web scrapping (first activate python environment)
+- task: CmdLine@2
+  inputs:
+    script: |
+      @echo PYTHONPATH=%PYTHONPATH%
+      @call activate_env.batd
+      python Test_web_scrapping_activation.py
+      @echo PYTHONPATH=%PYTHONPATH%
+    workingDirectory: 'bld'
+  displayName: 'test web scrapping activation'
+  condition: succeededOrFailed()
+
