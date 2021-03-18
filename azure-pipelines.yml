@@ -17,7 +17,7 @@ steps:
   inputs:
     script: |
       @echo PYTHONPATH=%PYTHONPATH%
-      @call activate_env.batd
+      @call activate_env.bat
       python Test_web_scrapping_activation.py
       @echo PYTHONPATH=%PYTHONPATH%
     workingDirectory: 'bld'
