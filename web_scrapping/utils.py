@@ -5,6 +5,8 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 
+def hellow_world_web_scrapping():
+    return "Web scrapping tool says hello world!"
 
 def url_path_join(*parts):
     """Normalize url parts and join them with a slash.
