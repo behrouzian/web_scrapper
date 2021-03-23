@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # get the address of current module
     mainScriptPath = os.path.dirname(__file__)
     rawDataPath = os.path.join(mainScriptPath, "rawData\\")
-    parariusDataCsvFileName =  os.path.join(rawDataPath, "parariusData.csv")
+    parariusDataCsvFileName = os.path.join(rawDataPath, "parariusData.csv")
     #create the path if does not exist
     if not os.path.exists(rawDataPath):
         os.makedirs(rawDataPath)
@@ -38,29 +38,42 @@ if __name__ == "__main__":
         allHouseURLList = []
         write_header = True
 
-    soup = utils.make_soup('https://www.pararius.nl/huurwoningen/nederland/', 'html.parser')
+    ### OFLINE-ONLINE (DELETE ONCE IN THE NETHERLANDS)
+    offlineListPath = "C:\\PythonScripts\\web_scrapping_data\\offline_data\\pararius_list_page1.html"
+    soup = utils.make_soup_offline(offlineListPath)
+
+    ######
+    #soup = utils.make_soup('https://www.pararius.nl/huurwoningen/nederland/', 'html.parser')
 
     #get number of pages
     numPages, pagesAdrsTemplate = utils_pararius.how_many_pages(soup)
 
+    ### OFLINE-ONLINE (DELETE ONCE IN THE NETHERLANDS)
+    numPages = 1
+    ######
+
     newHouseURLList = []
-    #if the
     stopCounter = 0
     #fast: get the url of all the houses (6 min 10400 houses)
-    for numPage in range(1, numPages):
+    for numPage in range(1, numPages+1):
+        # if the number of the pre-existing houses is more than "stopCounter"
+        # it means that we are already in an old list (big number the first time)
         if stopCounter >= 12000:
             break
         try:
-            newHouseExist = False
-            #logger.info("number of urls: " .format(len(allHousesUrlList)))
             currentPageUrl = pagesAdrsTemplate.replace("pppp", str(numPage))
             currentPageUrl = utils.url_path_join("https://www.pararius.nl/", currentPageUrl)
-            soup = utils.make_quick_soup(currentPageUrl)
+            ### OFLINE-ONLINE (DELETE ONCE IN THE NETHERLANDS)
+            offlineListPath = "C:\\PythonScripts\\web_scrapping_data\\offline_data\\pararius_list_page1.html"
+            soup = utils.make_soup_offline(offlineListPath)
+
+            ######
+            # soup = utils.make_soup_quick(currentPageUrl)
             for tag in (soup.find_all('li', attrs={"class": "search-list__item search-list__item--listing"})):
                 for aTag in tag.find_all('a'):
                     if aTag.has_attr("class"):
                         if any("listing-search-item__link--title" in s for s in aTag['class']):
-                            # if the url exist in the registery list add stop counter
+                            # if the url exist in the registry list add stop counter
                             #otherwise register
                             tempUrl = utils.url_path_join("https://www.pararius.nl/", \
                                                                        aTag['href'])
@@ -73,57 +86,30 @@ if __name__ == "__main__":
 
         except:
             pass
+    logger.info("Number of new houses = {}" .format(len(newHouseURLList)))
 
+    ##get the data of individual houses
 
+    #iterate over new houses
+    for currentHouseUrl in newHouseURLList:
+        logger.info("get data for : {}" .format(currentHouseUrl))
 
-    #create the url list of new houses
-    newHouseURLList = []
-    # iterate over pages as long as the item are "nieuw"
-    for numPage in range(1,numPages):
-        newHouseURLList = []
-        newHouseExist = False
-        currentPageUrl = pagesAdrsTemplate.replace("pppp", str(numPage))
-        currentPageUrl = utils.url_path_join("https://www.pararius.nl/", currentPageUrl )
-        soup = utils.make_soup(currentPageUrl, 'html.parser')
+        ### OFLINE-ONLINE (DELETE ONCE IN THE NETHERLANDS)
+        currentHouseUrl = "example"
+        offlineIndividualHouseExp = "C:\\PythonScripts\\web_scrapping_data\\offline_data\\pararius_specificHouse_example3.html"
+        soup = utils.make_soup_offline(offlineIndividualHouseExp)
+        #####
+        #soup = utils.make_soup(currentHouseUrl, 'html.parser')
 
-        dfPararius['url'].iloc[-1]
-        #get data of last house in the last fetch
-
-        #convert the
-
-        newHouseURLList = utils_pararius.get_new_house_list
-        #iterate over the items with the tag new
-        for tag in (soup.find_all('li', attrs={"class": "search-list__item--listing"})):
-            for nieuwSpanTag in tag.find_all('span'):
-                if tag.has_attr("class"):
-                    #if any("listing-search-item__is-new" in s for s in nieuwSpanTag['class']):
-                    if True:
-                        for nieuwH2Tag in tag.find_all('a'):
-                            if nieuwH2Tag.has_attr("class"):
-                                if any("listing-search-item__link--title" in s for s in nieuwH2Tag['class']):
-                                    newHouseURLList.append(utils.url_path_join("https://www.pararius.nl/", \
-                                                                               nieuwH2Tag['href']))
-                                    newHouseExist = True
-        if not newHouseExist:
-            break
-        logger.info("Number of new houses = {}" .format(len(newHouseURLList)))
-        #check if the houses data is already recorded
-        for currentHouseUrl in newHouseURLList:
-            if not dfPararius['url'].str.contains(currentHouseUrl).any():
-                logger.info("get data for : {}" .format(currentHouseUrl))
-                soup = utils.make_soup(currentHouseUrl, 'html.parser')
-                currentHousedict = utils_pararius.get_empty_pararius_dict()
-
-                # currentHousedict['rentPriceStr'],\
-                # currentHousedict['rentPrice'], \
-                # currentHousedict['pricePeriod']= utils_pararius.get_rent_price(soup)
-                # logger.info("rentPriceStr: {}".format(currentHousedict['rentPriceStr']))
-                currentHousedict = utils_pararius.get_all_data(soup)
-                currentHousedict['url'] = [currentHouseUrl]
-                currentHousedf = pd.DataFrame.from_dict(currentHousedict)
-                dfPararius.append(currentHousedf)
-                currentHousedf.to_csv(parariusDataCsvFileName,index=False, mode='a', header=write_header)
-                write_header = False
+        #first create an empty dictionary given the keys of the parariusParameters
+        currentHousedict = utils_pararius.get_empty_pararius_dict()
+        currentHousedict = utils_pararius.get_all_data(soup)
+        currentHousedict = utils_pararius.clean_house_dict(currentHousedict)
+        currentHousedict['url'] = [currentHouseUrl]
+        currentHousedf = pd.DataFrame.from_dict(currentHousedict)
+        dfPararius.append(currentHousedf)
+        currentHousedf.to_csv(parariusDataCsvFileName,index=False, mode='a', header=write_header)
+        write_header = False
 
     #write output
     logger.info("The End!")

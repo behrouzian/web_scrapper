@@ -1,7 +1,5 @@
-from web_scrapping import utils
-from dataclasses import dataclass
-from datetime import date, datetime
 import pandas as pd
+import re
 
 parariusParameters = {'rentPriceStr':["dd", "listing-features__description--for_rent_price"],
 'inclusive':["dd", "listing-features__description--for_rent_price"],
@@ -39,6 +37,36 @@ def get_all_data(soup):
             if tag.has_attr("class"):
                 if any(parariusParameters[key][1] in s for s in tag['class']):
                     tempDict[key] = [tag.get_text()]
+    return tempDict
+
+def clean_house_dict(tempDict):
+    # if tempDict['rentalPriceStr'] contains "inclusief/exclusief" data
+    if ("inclusief" in tempDict['rentPriceStr'][0].lower()) |\
+            ("exclusief" in tempDict['rentPriceStr'][0].lower()):
+        inclusiveDataStartCharacterPosition = len(tempDict['rentPriceStr'][0])
+        exclusiveDataStartCharacterPosition = len(tempDict['rentPriceStr'][0])
+        if "inclusief" in tempDict['rentPriceStr'][0].lower():
+            #find where the position of 'inclusive/exclusive' data starts
+            inclusiveDataStartCharacterPosition = re.search(r"inclusief:",
+                                                            tempDict['rentPriceStr'][0].lower()).start()
+        if "exclusief" in tempDict['rentPriceStr'][0].lower():
+            exclusiveDataStartCharacterPosition = re.search(r"exclusief:",
+                                                            tempDict['rentPriceStr'][0].lower()).start()
+        startPosition = min(inclusiveDataStartCharacterPosition,
+                                exclusiveDataStartCharacterPosition)
+        tempDict['inclusive'][0] = tempDict['rentPriceStr'][0][startPosition:]
+
+    # remove dot from the price
+    tempDict['rentPriceStr'][0] = tempDict['rentPriceStr'][0].replace(".", "")
+
+    # extract only numbers from rentPriceStr
+    pattern = r'\d+'
+    pattern_regex = re.compile(pattern)
+    result = pattern_regex.findall(tempDict['rentPriceStr'][0].lower())
+    # if the result makes sense
+    if (int(result[0]) >= 300) & (int(result[0]) <= 10000):
+        tempDict['rentPriceStr'][0] = str(result[0])
+
     return tempDict
 
 
@@ -101,5 +129,7 @@ def how_many_pages(soup):
                     firstIteration = False
 
     return (max(pageNumberList), pagesAdrsTemplate)
+
+
 
 

@@ -36,9 +36,13 @@ def make_soup(url, features = 'html.parser'):
     driver.close()
     return BeautifulSoup(page_source, features)
 
-def make_quick_soup(url, features = 'html.parser' ):
+def make_soup_quick(url, features ='html.parser'):
     content = requests.get(url)
-    return BeautifulSoup(content.text, 'html.parser')
+    return BeautifulSoup(content.text, features)
+
+def make_soup_offline(path, features = 'html.parser'):
+    content = open(path, 'r').read()
+    return BeautifulSoup(content, features)
 
 def clean_html(bad_html):
     tree = BeautifulSoup(bad_html)
